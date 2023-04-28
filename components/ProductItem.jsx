@@ -5,7 +5,7 @@ import React from 'react';
 const ProductItem = ({ product }) => {
   return (
     <article className='card'>
-      <Link href={`product/${product.slug}`}>
+      <Link href={`products/${product.slug}`}>
         <Image
           src={product.image}
           alt={product.name}
