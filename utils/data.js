@@ -9,7 +9,7 @@ const data = {
             brand: 'Nike',
             rating: 4.5,
             numReviews: 8,
-            countInStock: 25,
+            countInStock: 5,
             description: 'Playera unitalla para caballero'
         },
         {

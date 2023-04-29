@@ -1,4 +1,4 @@
-import { createContext, useReducer } from "react";
+import { createContext, useReducer } from 'react';
 
 // Crear el contexto (Almacen de información)
 export const Store = createContext();
@@ -14,7 +14,7 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     // Agregar al carrito de la compra
-    case "CART_ADD_ITEM": {
+    case 'CART_ADD_ITEM': {
       const newItem = action.payload;
       const existItem = state.cart.cartItems.find(
         (item) => item.slug === newItem.slug
@@ -24,6 +24,13 @@ function reducer(state, action) {
             item.name === existItem.name ? newItem : item
           )
         : [...state.cart.cartItems, newItem];
+      return { ...state, cart: { ...state.cart, cartItems } };
+    }
+    case 'CART_REMOVE_ITEM': {
+      // Filtrar productos para remover el item seleccionado
+      const cartItems = state.cart.cartItems.filter(
+        (productState) => productState.slug !== action.payload.slug
+      );
       return { ...state, cart: { ...state.cart, cartItems } };
     }
     default:
