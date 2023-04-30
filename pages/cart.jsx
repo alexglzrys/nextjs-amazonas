@@ -103,8 +103,9 @@ const CartScreen = () => {
                 </div>
               </li>
               <li>
+                {/* Para realizar el proceso de compra, el usuario tiene que estar logeado, y si es así se le redirecciona al apartado de compra */}
                 <button
-                  onClick={() => router.push("/shipping")}
+                  onClick={() => router.push("/login?redirect=/shipping")}
                   className="primary-button w-full"
                 >
                   Pagar
