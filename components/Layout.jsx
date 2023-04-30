@@ -1,12 +1,21 @@
 import { Store } from "@/utils/Store";
 import Head from "next/head";
 import Link from "next/link";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 
 const Layout = ({ children, title }) => {
   // Usar el contexto del carrito de la compra
   const { state } = useContext(Store);
   const { cart } = state;
+
+  // Evitar problema de hidratación - calcular la cantidad de productos agregasdos en el carrito solo en el cliente
+  const [cartItemsCount, setCartItemsCount] = useState(0);
+  // Recalcular la cantidad de productos agregados al carrito si el listado cambia
+  useEffect(() => {
+    setCartItemsCount(
+      cart.cartItems.reduce((acum, item) => acum + item.quantity, 0)
+    );
+  }, [cart.cartItems]);
 
   return (
     <>
@@ -24,13 +33,10 @@ const Layout = ({ children, title }) => {
           <div>
             <Link href="/cart" className="p-2">
               Cart{" "}
-              {cart.cartItems.length > 0 && (
+              {cartItemsCount > 0 && (
                 <span className="ml-1 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">
                   {/* Generar una sumatoria de la cantidad de productos agregados al carrito de compras */}
-                  {cart.cartItems.reduce(
-                    (acum, item) => acum + item.quantity,
-                    0
-                  )}
+                  {cartItemsCount}
                 </span>
               )}
             </Link>

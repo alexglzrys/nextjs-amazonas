@@ -5,6 +5,7 @@ import Link from "next/link";
 import React, { useContext } from "react";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 import { useRouter } from "next/router";
+import dynamic from "next/dynamic";
 
 const CartScreen = () => {
   // Requerir contexto del carrito de la compra
@@ -117,4 +118,16 @@ const CartScreen = () => {
   );
 };
 
-export default CartScreen;
+/**
+ * Esta página provoca un error de hidraación
+ * El server renderiza información diferente a la que se tiene en el cliente
+ * - El server no es consiente que se tienen agregados ciertos productos en el carrtito de compra
+ * - El cliente si es consiente, ya que consulta esa información en la cookie
+ * 
+ * El problema realmente reside en el bullet donde indica la cantidad de productos agregados en el carrito
+ * 
+ * Con dynamic le indicamos a NextJS que esta página no será renderizada desde el server
+ * ya que tiene una dependencia externa (librería de cookies) que solo trabaja en el cliente
+ * de esta forma, evitamos el problema de hidratación
+ */
+export default dynamic(() => Promise.resolve(CartScreen), {ssr: false}) ;
