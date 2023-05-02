@@ -1,7 +1,12 @@
 import Layout from "@/components/Layout";
+import { getError } from "@/utils/error";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+import { signIn, useSession } from 'next-auth/react'
+import { useRouter } from "next/router";
+
 
 const LoginScreen = () => {
     // Importar el hook personalizado integrado en la librería React Hook Form para el manejo y gestión de formularios
@@ -12,9 +17,34 @@ const LoginScreen = () => {
     formState: { errors },
   } = useForm();
 
+  const router = useRouter();
+  // La cadena de consulta pasada a la ruta
+  const {redirect} = router.query;
+  
+  const {data: session} = useSession();
+
+  // Lanzar este edecto secundario cada vez que la session, el queryString o el router cambien
+  // Es el encargado de redireccionar a usuarios previamente autenticados para que no accedan a la pantalla de login
+  useEffect(() => {
+    if (session?.user) {
+      router.push(redirect || '/');
+    }
+  }, [redirect, router, session]);
+
   // Controlador para enviar los datos del formulario de autenticación
-  const submitHandler = ({email, password}) => {
-    console.log(email,password)
+  const submitHandler = async({email, password}) => {
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password
+      });
+      if (result.error) {
+        toast.error(result.error)
+      }
+    } catch (err) {
+      toast.error(getError(err))
+    }
   };
 
   return (
