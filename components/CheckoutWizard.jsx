@@ -1,0 +1,17 @@
+import React from 'react'
+
+const headers = ['User Login', 'Shipping Address', 'Payment Method', 'Place Order'];
+const CheckoutWizard = ({activeStep = 0}) => {
+  return (
+    <div className='mb-5 flex flex-wrap'>
+        {/* Mostrar las opciones de cabecera */}
+        {headers.map((step, index) => (
+            <div key={step} className={`flex-1 border-b-2 text-center ${index <= activeStep ? 'text-indigo-500 border-indigo-500' : 'text-gray-400 border-gray-400'}`}>
+                {step}
+            </div>
+        ))}
+    </div>
+  )
+}
+
+export default CheckoutWizard
