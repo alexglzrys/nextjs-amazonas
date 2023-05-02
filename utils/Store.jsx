@@ -9,7 +9,7 @@ export const Store = createContext();
 const initialState = {
   cart: Cookies.get("cart")
     ? JSON.parse(Cookies.get("cart"))
-    : { cartItems: [], shippingAddress: {} },
+    : { cartItems: [], shippingAddress: {}, paymentMethod: "" },
 };
 
 // Crear el Reducer (Acciones o tareas)
@@ -36,30 +36,38 @@ function reducer(state, action) {
       const cartItems = state.cart.cartItems.filter(
         (productState) => productState.slug !== action.payload.slug
       );
-      Cookies.set('cart', JSON.stringify({ ...state.cart, cartItems }))
+      Cookies.set("cart", JSON.stringify({ ...state.cart, cartItems }));
       return { ...state, cart: { ...state.cart, cartItems } };
     }
-    case 'CART_RESET': 
-      // Limpiar el carrtiro de la compra (logout) 
+    case "CART_RESET":
+      // Limpiar el carrtiro de la compra (logout)
       return {
         ...state,
         cart: {
           cartItems: [],
-          shippingAddress: { location: {}},
-          paymentMethod: '',
-        }
-      }
-    case 'SAVE_SHIPPING_ADDRESS': 
+          shippingAddress: { location: {} },
+          paymentMethod: "",
+        },
+      };
+    case "SAVE_SHIPPING_ADDRESS":
       return {
         ...state,
         cart: {
           ...state.cart,
           shippingAddress: {
             ...state.cart.shippingAddress,
-            ...action.payload
-          }
-        }
-      }
+            ...action.payload,
+          },
+        },
+      };
+    case "SAVE_PAYMENT_METHOD":
+      return {
+        ...state,
+        cart: {
+          ...state.cart,
+          paymentMethod: action.payload,
+        },
+      };
     default:
       return state;
   }
