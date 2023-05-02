@@ -1,14 +1,17 @@
 import { Store } from "@/utils/Store";
-import { useSession } from "next-auth/react";
+import { Menu } from "@headlessui/react";
+import { signOut, useSession } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
 import React, { useContext, useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import DropdownLink from "./DropdownLink";
+import Cookies from "js-cookie";
 
 const Layout = ({ children, title }) => {
   // Usar el contexto del carrito de la compra
-  const { state } = useContext(Store);
+  const { state, dispatch } = useContext(Store);
   const { cart } = state;
 
   const { status, data: session } = useSession();
@@ -21,6 +24,13 @@ const Layout = ({ children, title }) => {
       cart.cartItems.reduce((acum, item) => acum + item.quantity, 0)
     );
   }, [cart.cartItems]);
+
+  // Vaciar carrito de compras y cerrar sesión
+  const logoutClickHandler = () => {
+    Cookies.remove('cart')
+    dispatch({ type: 'CART_RESET' })
+    signOut({ callbackUrl: '/login '})
+  }
 
   return (
     <>
@@ -54,7 +64,22 @@ const Layout = ({ children, title }) => {
             {status === "loading" ? (
               "Cargando"
             ) : session?.user ? (
-              session.user.name
+              // https://headlessui.com/react/menu
+              <Menu>
+                <Menu.Button>{session.user.name}</Menu.Button>
+                <Menu.Items className="absolute right-0 origin-top-right bg-white shadow-lg w-56">
+                  <Menu.Item>
+                    <DropdownLink className="dropdown-link" href="/profile">Perfíl</DropdownLink>
+                  </Menu.Item>
+                  <Menu.Item>
+                    <DropdownLink className="dropdown-link" href="/order-history">Historial de compras</DropdownLink>
+                  </Menu.Item>
+                  <Menu.Item>
+                    <DropdownLink className="dropdown-link" href="#" onClick={logoutClickHandler}>Cerrar sesión</DropdownLink>
+                  </Menu.Item>
+                </Menu.Items>
+              </Menu>
+              
             ) : (
               <Link href="/login" className="p-2">
                 Login

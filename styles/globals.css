@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 /* Aplicar algunos estilos definidos en clases de Tailwind */
+a {
+    @apply text-blue-600 hover:text-blue-800;
+}
+.dropdown-link {
+    @apply flex p-2 hover:bg-gray-200;
+}
 .card {
     @apply mb-5 block rounded-lg border-gray-200 shadow-md;
 }

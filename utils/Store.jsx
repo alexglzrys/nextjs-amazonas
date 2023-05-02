@@ -39,6 +39,16 @@ function reducer(state, action) {
       Cookies.set('cart', JSON.stringify({ ...state.cart, cartItems }))
       return { ...state, cart: { ...state.cart, cartItems } };
     }
+    case 'CART_RESET': 
+      // Limpiar el carrtiro de la compra (logout) 
+      return {
+        ...state,
+        cart: {
+          cartItems: [],
+          shippingAddress: { location: {}},
+          paymentMethod: '',
+        }
+      }
     default:
       return state;
   }
