@@ -6,6 +6,8 @@ import React, { useContext } from "react";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const CartScreen = () => {
   // Requerir contexto del carrito de la compra
@@ -25,12 +27,17 @@ const CartScreen = () => {
   };
 
   // Controlador para actualizar la cantidad de piezas a agregar en el carrito de compra para este producto en particular
-  const updateCartHandler = (item, qty) => {
+  const updateCartHandler = async(item, qty) => {
     const quantity = Number(qty);
+    const {data} = await axios.get(`/api/products/${item._id}`)
+    if (data.countInStock < quantity) {
+      return toast.error('Lo sentimos, No hay existencias para este producto')
+    }
     dispatch({
       type: 'CART_ADD_ITEM',
       payload: { ...item, quantity },
     })
+    toast.success('Producto agregado al carrito de compras')
   }
 
   return (
