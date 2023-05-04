@@ -11,7 +11,7 @@ export default NextAuth({
     callbacks: {
         async jwt({token, user}) {
             // Si existe el usuario, se almacena cierta información en el token
-            if (user?._id) token._id = user.id;
+            if (user?._id) token._id = user._id;
             if (user?.isAdmin) token.isAdmin = user.isAdmin;
             return token;
         },
