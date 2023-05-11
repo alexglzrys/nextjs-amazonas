@@ -4,56 +4,77 @@ import Link from "next/link";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
-import { signIn, useSession } from 'next-auth/react'
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import axios from "axios";
 
-
-const LoginScreen = () => {
-    // Importar el hook personalizado integrado en la librería React Hook Form para el manejo y gestión de formularios
+const RegisterScreen = () => {
+  // Importar el hook personalizado integrado en la librería React Hook Form para el manejo y gestión de formularios
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm();
 
   const router = useRouter();
   // La cadena de consulta pasada a la ruta
-  const {redirect} = router.query;
-  
-  const {data: session} = useSession();
+  const { redirect } = router.query;
+
+  const { data: session } = useSession();
 
   // Lanzar este edecto secundario cada vez que la session, el queryString o el router cambien
   // Es el encargado de redireccionar a usuarios previamente autenticados para que no accedan a la pantalla de login
   useEffect(() => {
     if (session?.user) {
-      router.push(redirect || '/');
+      router.push(redirect || "/");
     }
   }, [redirect, router, session]);
 
-  // Controlador para enviar los datos del formulario de autenticación
-  const submitHandler = async({email, password}) => {
+  // Controlador para enviar los datos del formulario de registro
+  const submitHandler = async ({ name, email, password }) => {
     try {
-      const result = await signIn('credentials', {
+      // Registrar el usuario en la base de datos
+      await axios.post('/api/auth/signup', {name, email, password});
+
+      // Generar automáticamete la sesión para este nuevo usuario
+      // Si todo es correcto, la sessión cambia y se dispara el efecto secundario que provoca la redirección a otra página
+      const result = await signIn("credentials", {
         redirect: false,
         email,
-        password
+        password,
       });
       if (result.error) {
-        toast.error(result.error)
+        toast.error(result.error);
       }
     } catch (err) {
-      toast.error(getError(err))
+      toast.error(getError(err));
     }
   };
 
   return (
-    <Layout title="Login">
-        {/* Informar a React Hook Forms el controlador a usar al enviar el formulario */}
+    <Layout title="Crear cuenta">
+      {/* Informar a React Hook Forms el controlador a usar al enviar el formulario */}
       <form
         onSubmit={handleSubmit(submitHandler)}
         className="mx-auto max-w-screen-md"
       >
-        <h1 className="mb-4 text-lg">Login</h1>
+        <h1 className="mb-4 text-lg">Crear Cuenta</h1>
+        <div className="mb-4">
+          <label htmlFor="name">Nombre</label>
+          <input
+            type="text"
+            {...register("name", {
+              required: "El nombre es requerido",
+            })}
+            className="w-full"
+            autoFocus
+            id="name"
+          />
+          {errors.name && (
+            <div className="text-red-500 mt-2">{errors.name.message}</div>
+          )}
+        </div>
         <div className="mb-4">
           <label htmlFor="email">Email</label>
           {/* Informar a React Hook Form el registro de este campo para su gestión */}
@@ -68,7 +89,6 @@ const LoginScreen = () => {
             })}
             className="w-full"
             id="email"
-            autoFocus
           />
           {/* En caso de existir errres de validación con este campo, mostrarlos en pantalla */}
           {errors.email && (
@@ -95,14 +115,38 @@ const LoginScreen = () => {
           )}
         </div>
         <div className="mb-4">
-          <button className="primary-button">Login</button>
+          <label htmlFor="confirmPassword">Confirmar Contraseña</label>
+          <input
+            type="password"
+            {...register("confirmPassword", {
+              required: "La confirmación de contraseña es obligatoria",
+              minLength: {
+                value: 6,
+                message: "La contraseña debe ser de al menos 6 caracteres",
+              },
+              validate: (value) => value === getValues("password"),
+            })}
+            className="w-full"
+            id="confirmPassword"
+          />
+          {errors.confirmPassword && (
+            <div className="text-red-500 mt-2">
+              {errors.confirmPassword.message}
+            </div>
+          )}
+          {errors.confirmPassword &&
+            errors.confirmPassword.type === "validate" && (
+              <div className="text-red-500 mt-2">
+                Las contraseñas son diferentes
+              </div>
+            )}
         </div>
         <div className="mb-4">
-          No tienes una cuenta? &nbsp;<Link href={`/register?redirect=${redirect || '/'}`}>Registrate</Link>
+          <button className="primary-button">Registrar</button>
         </div>
       </form>
     </Layout>
   );
 };
 
-export default LoginScreen;
+export default RegisterScreen;
