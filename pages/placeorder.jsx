@@ -49,7 +49,7 @@ const PlaceOrderScreen = () => {
         cartItems: []
       }))
       // redireccionar a la página referente a la confirmación de ordern de compra
-      router.push(`/orders/${data._id}`);
+      router.push(`/order/${data._id}`);
     } catch (err) {
       setLoading(false)
       toast.error(getError(err));
