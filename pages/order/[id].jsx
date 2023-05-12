@@ -1,10 +1,12 @@
 import Layout from "@/components/Layout";
 import { getError } from "@/utils/error";
+import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useReducer } from "react";
+import { toast } from "react-toastify";
 
 // Reducer con tareas relacionadas a peticiones HTTP
 // referente a esta orden de compra
@@ -16,6 +18,14 @@ function reducer(state, action) {
       return { ...state, loading: false, order: action.payload, error: "" };
     case "FETCH_FAIL":
       return { ...state, loading: false, error: action.payload };
+    case "PAY_REQUEST":
+      return { ...state, loadingPay: true };
+    case "PAY_SUCCESS":
+      return { ...state, loadingPay: false, successPay: true };
+    case "PAY_FAIL":
+      return { ...state, loadingPay: false, errorPay: action.payload };
+    case "PAY_RESET":
+      return { ...state, loadingPay: false, successPay: false, errorPay: "" };
     default:
       return state;
   }
@@ -26,8 +36,13 @@ const OrderScreen = () => {
   const { query } = useRouter();
   const orderId = query.id;
 
+  const [{ isPending }, paypalDispatch] = usePayPalScriptReducer();
+
   // Pasar el estado inicial a la función reducer
-  const [{ loading, order, error }, dispatch] = useReducer(reducer, {
+  const [
+    { loading, order, error, loadingPay, successPay },
+    dispatch,
+  ] = useReducer(reducer, {
     loading: true,
     order: {},
     error: "",
@@ -46,12 +61,32 @@ const OrderScreen = () => {
         dispatch({ type: "FETCH_FAIL", payload: getError(err) });
       }
     };
-    if (!order._id || order._id != orderId) {
+    if (!order._id || successPay || order._id != orderId) {
       // Evitar golpear el server cada vez que se haga un refresh de esta página
       // La info está en estado
       fetchOrder();
+      if (successPay) {
+        dispatch({type: 'PAY_RESET'})
+      }
+    } else {
+      // Se tiene toda la información correspondiente a esta orden
+      // Estamos listos para mostrar el botón de pago
+      const loadPaypalScript = async () => {
+        // Recuperar el CLIENT_ID para este proyecto en Paypal
+        // No se recupera directamente ya que tenemos que comprobar que el usuario tenga una sesión activa
+        const { data: clientId } = await axios.get("/api/keys/paypal");
+        paypalDispatch({
+          type: "resetOptions",
+          value: {
+            "client-id": clientId,
+            currency: "MXN",
+          },
+        });
+        paypalDispatch({ type: "setLoadingStatus", value: "pending" });
+      };
+      loadPaypalScript();
     }
-  }, [orderId, order]);
+  }, [orderId, order, successPay, paypalDispatch]);
 
   // Desestructurar el contenido de la orden de compra registrada en base de datos
   const {
@@ -67,6 +102,45 @@ const OrderScreen = () => {
     paidAt,
     deliveredAt,
   } = order;
+
+  // Funciones para realizar pago mediante Paypal
+
+  // Indicar a Paypal el monto total a pagar por esta orden o pedido
+  const createOrder = (data, actions) => {
+    return actions.order
+      .create({
+        purchase_units: [
+          {
+            amount: { value: totalPrice },
+          },
+        ],
+      })
+      .then((order_paypal_id) => order_paypal_id);
+  };
+
+  // Si Paypal aprueba el pago, tenemos que actualizar la orden de pedido a un status pagado
+  // conservando el ID de seguiento del pago generado por Paypal
+  const onApprove = (data, actions) => {
+    return actions.order.capture().then(async (details) => {
+      try {
+        dispatch({ type: "PAY_REQUEST" });
+        const { data } = await axios.put(
+          `/api/orders/${order._id}/pay`,
+          details
+        );
+        dispatch({ type: "PAY_SUCCESS", payload: data });
+        toast.success("Orden pagada de forma correcta");
+      } catch (err) {
+        dispatch({ type: "PAY_FAIL", payload: getError(err) });
+        toast.error(getError(err));
+      }
+    });
+  };
+
+  // En caso de error, mostrar feedback al cliente
+  const onError = (err) => {
+    toast.error(getError(err));
+  };
 
   return (
     <Layout title={`Detalle - Orden ${orderId}`}>
@@ -117,7 +191,10 @@ const OrderScreen = () => {
                   {orderItems.map((item) => (
                     <tr className="border-b" key={item._id}>
                       <td className="p-5 text-left">
-                        <Link href={`/product/${item.slug}`} className="flex items-center">
+                        <Link
+                          href={`/product/${item.slug}`}
+                          className="flex items-center"
+                        >
                           <Image
                             src={item.image}
                             alt={item.name}
@@ -166,6 +243,23 @@ const OrderScreen = () => {
                   <div>${Number(totalPrice).toFixed(2)}</div>
                 </div>
               </li>
+              {/* Colocar el botón de paypal si esta orden aun esta pendiente de pago */}
+              {!isPaid && (
+                <li>
+                  {isPending ? (
+                    <div>Cargando...</div>
+                  ) : (
+                    <div className="w-full">
+                      <PayPalButtons
+                        createOrder={createOrder}
+                        onApprove={onApprove}
+                        onError={onError}
+                      />
+                    </div>
+                  )}{" "}
+                  {loadingPay && <div>Cargando...</div>}
+                </li>
+              )}
             </ul>
           </div>
         </div>

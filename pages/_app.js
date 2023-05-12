@@ -1,5 +1,6 @@
 import "@/styles/globals.css";
 import { StoreProvider } from "@/utils/Store";
+import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { SessionProvider, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 
@@ -13,14 +14,17 @@ export default function App({
     // Session Provider es el que nos permite saber si el usuario esta o no autenticado
     <SessionProvider session={session}>
       <StoreProvider>
-        {/* Si el componente a renderizar tiene la propiedad auth en true, significa que es un componente protegido por autenticación */}
-        {Component.auth ? (
-          <Auth>
+        {/* Usar Provider para pagos en Paypal */}
+        <PayPalScriptProvider deferLoading={true}>
+          {/* Si el componente a renderizar tiene la propiedad auth en true, significa que es un componente protegido por autenticación */}
+          {Component.auth ? (
+            <Auth>
+              <Component {...pageProps} />
+            </Auth>
+          ) : (
             <Component {...pageProps} />
-          </Auth>
-        ) : (
-          <Component {...pageProps} />
-        )}
+          )}
+        </PayPalScriptProvider>
       </StoreProvider>
     </SessionProvider>
   );
